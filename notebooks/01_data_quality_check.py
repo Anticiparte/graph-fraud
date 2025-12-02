@@ -15,7 +15,7 @@ app = marimo.App()
 
 
 @app.cell
-def __():
+def _():
     import marimo as mo
     import pandas as pd
     import numpy as np
@@ -24,17 +24,19 @@ def __():
     import seaborn as sns
 
     sns.set_style("whitegrid")
-    return mo, pd, np, Path, plt, sns
+    return Path, mo, np, pd, plt
 
 
 @app.cell
-def __(mo):
-    mo.md("# Data Quality Check - Fraud Detection Dataset")
+def _(mo):
+    mo.md("""
+    # Data Quality Check - Fraud Detection Dataset
+    """)
     return
 
 
 @app.cell
-def __(mo):
+def _(mo):
     mo.md("""
     ## 1. Load Raw Data
 
@@ -44,8 +46,13 @@ def __(mo):
 
 
 @app.cell
-def __(pd, Path):
-    data_dir = Path("../data/raw")
+def _(Path, pd):
+    # Find project root directory
+    import os
+    cwd = Path(os.getcwd())
+    # If running from notebooks dir, go up one level
+    project_root = cwd.parent if cwd.name == "notebooks" else cwd
+    data_dir = project_root / "data" / "raw"
 
     users_df = pd.read_csv(data_dir / "users.csv")
     transactions_df = pd.read_csv(data_dir / "transactions.csv")
@@ -56,17 +63,19 @@ def __(pd, Path):
     print(f"Loaded {len(users_df)} users")
     print(f"Loaded {len(transactions_df)} transactions")
     print(f"Loaded {len(fraud_labels_df)} fraud labels")
-    return users_df, transactions_df, fraud_labels_df, devices_df, ips_df, data_dir
+    return fraud_labels_df, transactions_df, users_df
 
 
 @app.cell
-def __(mo):
-    mo.md("## 2. Dataset Overview")
+def _(mo):
+    mo.md("""
+    ## 2. Dataset Overview
+    """)
     return
 
 
 @app.cell
-def __(users_df, transactions_df, mo):
+def _(mo, users_df):
     mo.md(f"""
     ### Users Dataset
     - **Shape**: {users_df.shape}
@@ -76,19 +85,19 @@ def __(users_df, transactions_df, mo):
 
 
 @app.cell
-def __(users_df):
+def _(users_df):
     users_df.head(10)
     return
 
 
 @app.cell
-def __(users_df):
+def _(users_df):
     users_df.info()
     return
 
 
 @app.cell
-def __(transactions_df, mo):
+def _(mo, transactions_df):
     mo.md(f"""
     ### Transactions Dataset
     - **Shape**: {transactions_df.shape}
@@ -98,19 +107,21 @@ def __(transactions_df, mo):
 
 
 @app.cell
-def __(transactions_df):
+def _(transactions_df):
     transactions_df.head(10)
     return
 
 
 @app.cell
-def __(mo):
-    mo.md("## 3. Missing Value Analysis")
+def _(mo):
+    mo.md("""
+    ## 3. Missing Value Analysis
+    """)
     return
 
 
 @app.cell
-def __(users_df, transactions_df, fraud_labels_df, pd):
+def _(fraud_labels_df, pd, transactions_df, users_df):
     missing_summary = pd.DataFrame({
         'Dataset': ['Users', 'Transactions', 'Fraud Labels'],
         'Total Rows': [len(users_df), len(transactions_df), len(fraud_labels_df)],
@@ -125,11 +136,11 @@ def __(users_df, transactions_df, fraud_labels_df, pd):
         (missing_summary['Total Rows'] * 5)  # Approximate column count
     ) * 100
     missing_summary
-    return (missing_summary,)
+    return
 
 
 @app.cell
-def __(transactions_df, pd):
+def _(pd, transactions_df):
     # Detailed missing value analysis for transactions
     txn_missing = pd.DataFrame({
         'Column': transactions_df.columns,
@@ -137,17 +148,19 @@ def __(transactions_df, pd):
         'Missing %': (transactions_df.isnull().sum() / len(transactions_df)) * 100
     }).sort_values('Missing Count', ascending=False)
     txn_missing
-    return (txn_missing,)
-
-
-@app.cell
-def __(mo):
-    mo.md("## 4. Data Type Verification")
     return
 
 
 @app.cell
-def __(users_df, transactions_df):
+def _(mo):
+    mo.md("""
+    ## 4. Data Type Verification
+    """)
+    return
+
+
+@app.cell
+def _(transactions_df, users_df):
     print("Users DataFrame dtypes:")
     print(users_df.dtypes)
     print("\nTransactions DataFrame dtypes:")
@@ -156,13 +169,15 @@ def __(users_df, transactions_df):
 
 
 @app.cell
-def __(mo):
-    mo.md("## 5. Distribution Analysis - Users")
+def _(mo):
+    mo.md("""
+    ## 5. Distribution Analysis - Users
+    """)
     return
 
 
 @app.cell
-def __(users_df, plt, sns):
+def _(plt, users_df):
     fig_users, axes_users = plt.subplots(2, 2, figsize=(14, 10))
 
     # Age distribution
@@ -192,17 +207,19 @@ def __(users_df, plt, sns):
 
     plt.tight_layout()
     fig_users
-    return (account_type_counts,)
-
-
-@app.cell
-def __(mo):
-    mo.md("## 6. Distribution Analysis - Transactions")
     return
 
 
 @app.cell
-def __(transactions_df, plt, np):
+def _(mo):
+    mo.md("""
+    ## 6. Distribution Analysis - Transactions
+    """)
+    return
+
+
+@app.cell
+def _(np, plt, transactions_df):
     fig_txn, axes_txn = plt.subplots(2, 2, figsize=(14, 10))
 
     # Transaction amount distribution
@@ -233,35 +250,39 @@ def __(transactions_df, plt, np):
 
     plt.tight_layout()
     fig_txn
-    return (txn_type_counts, fraud_counts)
-
-
-@app.cell
-def __(mo):
-    mo.md("## 7. Statistical Summary")
     return
 
 
 @app.cell
-def __(users_df):
+def _(mo):
+    mo.md("""
+    ## 7. Statistical Summary
+    """)
+    return
+
+
+@app.cell
+def _(users_df):
     users_df.describe()
     return
 
 
 @app.cell
-def __(transactions_df):
+def _(transactions_df):
     transactions_df.describe()
     return
 
 
 @app.cell
-def __(mo):
-    mo.md("## 8. Outlier Detection")
+def _(mo):
+    mo.md("""
+    ## 8. Outlier Detection
+    """)
     return
 
 
 @app.cell
-def __(transactions_df, np):
+def _(transactions_df):
     # IQR method for outlier detection in transaction amounts
     Q1 = transactions_df['amount'].quantile(0.25)
     Q3 = transactions_df['amount'].quantile(0.75)
@@ -277,11 +298,11 @@ def __(transactions_df, np):
     print(f"Outliers detected: {len(outliers)} ({len(outliers)/len(transactions_df)*100:.2f}%)")
     print(f"Lower bound: {lower_bound:.2f}")
     print(f"Upper bound: {upper_bound:.2f}")
-    return Q1, Q3, IQR, lower_bound, upper_bound, outliers
+    return
 
 
 @app.cell
-def __(mo):
+def _(mo):
     mo.md("""
     ## 9. Data Quality Summary
 
@@ -295,13 +316,15 @@ def __(mo):
 
 
 @app.cell
-def __(mo):
-    mo.md("## 10. Data Quality Checklist")
+def _(mo):
+    mo.md("""
+    ## 10. Data Quality Checklist
+    """)
     return
 
 
 @app.cell
-def __(mo, users_df, transactions_df, fraud_labels_df):
+def _(mo, transactions_df, users_df):
     checklist = mo.md(f"""
     - ✓ Data loaded successfully
     - ✓ No critical missing values detected
@@ -312,7 +335,7 @@ def __(mo, users_df, transactions_df, fraud_labels_df):
     - ✓ Statistical distributions appear realistic
     """)
     checklist
-    return (checklist,)
+    return
 
 
 if __name__ == "__main__":

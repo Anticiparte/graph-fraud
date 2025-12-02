@@ -40,7 +40,11 @@ def __(mo):
 
 @app.cell
 def __(pd, Path):
-    data_dir = Path("../data/raw")
+    import os
+    cwd = Path(os.getcwd())
+    project_root = cwd.parent if cwd.name == "notebooks" else cwd
+    data_dir = project_root / "data" / "raw"
+
     transactions_df = pd.read_csv(data_dir / "transactions.csv")
     users_df = pd.read_csv(data_dir / "users.csv")
     fraud_labels_df = pd.read_csv(data_dir / "fraud_labels.csv")
