@@ -1,0 +1,97 @@
+# Feature Engineering Configuration
+
+# Neo4j Connection
+neo4j:
+  uri: "bolt://localhost:7687"
+  user: "neo4j"
+  password: "frauddetection123"
+  database: "neo4j"
+
+# Graph Features
+graph_features:
+  centrality:
+    - name: "degree_centrality"
+      algorithm: "gds.degree"
+      params:
+        orientation: "NATURAL"
+    - name: "pagerank"
+      algorithm: "gds.pageRank"
+      params:
+        maxIterations: 20
+        dampingFactor: 0.85
+    - name: "betweenness_centrality"
+      algorithm: "gds.betweenness"
+      params:
+        samplingSize: 1000
+
+  community:
+    - name: "louvain_community"
+      algorithm: "gds.louvain"
+      params:
+        maxLevels: 10
+        maxIterations: 10
+    - name: "community_size"
+      derived_from: "louvain_community"
+
+  clustering:
+    - name: "local_clustering_coefficient"
+      algorithm: "gds.localClusteringCoefficient"
+    - name: "triangle_count"
+      algorithm: "gds.triangleCount"
+
+  path:
+    - name: "shortest_path_to_fraud"
+      custom: true
+      description: "Minimum hops to known fraudulent user"
+
+# Temporal Features
+temporal_features:
+  transaction_velocity:
+    - name: "txn_count_7d"
+      window_days: 7
+    - name: "txn_count_30d"
+      window_days: 30
+    - name: "txn_count_90d"
+      window_days: 90
+
+  transaction_amounts:
+    - name: "total_amount_7d"
+      aggregation: "sum"
+      window_days: 7
+    - name: "avg_amount_30d"
+      aggregation: "mean"
+      window_days: 30
+    - name: "std_amount_30d"
+      aggregation: "std"
+      window_days: 30
+    - name: "max_amount_30d"
+      aggregation: "max"
+      window_days: 30
+
+# Network Features
+network_features:
+  shared_entities:
+    - name: "shared_device_count"
+      entity: "device_id"
+    - name: "shared_ip_count"
+      entity: "ip_address"
+
+  neighbor_features:
+    - name: "fraud_neighbor_ratio"
+      description: "Ratio of fraudulent neighbors"
+    - name: "avg_neighbor_degree"
+      description: "Average degree of neighbors"
+
+# Output Configuration
+output:
+  format: "parquet"
+  path: "data/processed/features.parquet"
+  include_raw_features: false
+  feature_catalog: "data/processed/feature_catalog.json"
+
+# Processing Configuration
+processing:
+  batch_size: 1000
+  parallel_workers: 4
+  cache_intermediate: true
+  cache_dir: "data/cache/"

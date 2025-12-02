@@ -1,0 +1,56 @@
+# Batch Inference Configuration
+
+# Model Configuration
+model:
+  registry_stage: "Production"  # None, Staging, Production, Archived
+  model_name: "fraud_detector"
+  fallback_version: null  # Specific version to use if stage not found
+
+# Data Configuration
+data:
+  input_path: "data/inference/features.parquet"
+  output_path: "data/inference/predictions.parquet"
+  batch_size: 10000
+
+# Feature Configuration
+features:
+  expected_features:
+    - degree
+    - in_degree
+    - out_degree
+    - degree_centrality
+    - pagerank
+    - clustering_coefficient
+    - age
+    - account_age_days
+    - credit_score
+  handle_missing: "error"  # error, drop, impute
+
+# Prediction Configuration
+prediction:
+  threshold: 0.5
+  output_probabilities: true
+  output_columns:
+    - user_id
+    - fraud_probability
+    - fraud_prediction
+    - timestamp
+
+# Neo4j Configuration
+neo4j:
+  enabled: true
+  write_predictions: true
+  node_label: "User"
+  properties:
+    - fraud_score
+    - fraud_label
+    - prediction_timestamp
+
+# Monitoring Configuration
+monitoring:
+  enabled: true
+  log_statistics: true
+  metrics:
+    - prediction_distribution
+    - processing_time
+    - error_rate

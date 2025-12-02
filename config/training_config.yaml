@@ -1,0 +1,101 @@
+# Model Training Configuration
+
+# Data Configuration
+data:
+  train_path: "data/processed/train.parquet"
+  test_path: "data/processed/test.parquet"
+  features_path: "data/processed/features.parquet"
+  target_column: "is_fraudster"
+  test_size: 0.3
+  random_state: 42
+  stratify: true
+
+# Feature Configuration
+features:
+  graph_features:
+    - degree
+    - in_degree
+    - out_degree
+    - degree_centrality
+    - pagerank
+    - clustering_coefficient
+  user_features:
+    - age
+    - account_age_days
+    - credit_score
+  drop_features:
+    - user_id
+    - registration_timestamp
+
+# Model Configuration
+model:
+  algorithm: "xgboost"
+  random_state: 42
+
+  # XGBoost Hyperparameters
+  xgboost:
+    objective: "binary:logistic"
+    eval_metric: "aucpr"
+    max_depth: 6
+    learning_rate: 0.1
+    n_estimators: 200
+    min_child_weight: 1
+    subsample: 0.8
+    colsample_bytree: 0.8
+    gamma: 0
+    reg_alpha: 0
+    reg_lambda: 1
+
+  # Class imbalance handling
+  scale_pos_weight: "auto"  # Will be calculated from data
+
+# Hyperparameter Tuning
+tuning:
+  enabled: false
+  method: "optuna"
+  n_trials: 50
+  timeout: 3600  # seconds
+  optimization_metric: "precision"
+  cv_folds: 5
+
+  # Search space
+  search_space:
+    max_depth: [3, 4, 5, 6, 7, 8]
+    learning_rate: [0.01, 0.05, 0.1, 0.2]
+    n_estimators: [100, 200, 300, 500]
+    min_child_weight: [1, 3, 5]
+    subsample: [0.6, 0.7, 0.8, 0.9, 1.0]
+    colsample_bytree: [0.6, 0.7, 0.8, 0.9, 1.0]
+    gamma: [0, 0.1, 0.2, 0.5]
+
+# Evaluation Configuration
+evaluation:
+  metrics:
+    - precision
+    - recall
+    - f1
+    - accuracy
+    - roc_auc
+    - pr_auc
+  threshold: 0.5
+
+  # Acceptance criteria for production promotion
+  acceptance_criteria:
+    precision: 0.85
+    f1: 0.75
+
+# MLflow Configuration
+mlflow:
+  tracking_uri: "sqlite:///mlflow.db"
+  experiment_name: "fraud-detection-baseline"
+  run_name_prefix: "xgboost"
+  log_model: true
+  register_model: true
+
+# Output Configuration
+output:
+  model_dir: "models/"
+  model_name_format: "fraud_detector_v{timestamp}.pkl"
+  preprocessor_name_format: "preprocessor_v{timestamp}.pkl"
+  save_feature_importance: true
+  save_confusion_matrix: true
