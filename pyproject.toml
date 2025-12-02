@@ -10,6 +10,7 @@ authors = [
 dependencies = [
     "dvc>=3.64.1",
     "marimo>=0.18.1",
+    "matplotlib>=3.10.7",
     "mlflow>=3.6.0",
     "neo4j>=6.0.3",
     "networkx>=3.6",
@@ -20,6 +21,7 @@ dependencies = [
     "python-dotenv>=1.2.1",
     "pyyaml>=6.0.3",
     "scikit-learn>=1.7.2",
+    "seaborn>=0.13.2",
     "xgboost>=3.1.2",
 ]
 
