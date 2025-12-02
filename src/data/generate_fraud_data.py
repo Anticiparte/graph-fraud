@@ -295,10 +295,10 @@ class FraudDataGenerator:
         print("Generating fraud labels...")
 
         fraud_users = set()
-        for _, _, data in self.graph.edges(data=True):
+        for source, target, data in self.graph.edges(data=True):
             if data.get("is_fraud", False):
-                fraud_users.add(_)
-                fraud_users.add(__)
+                fraud_users.add(source)
+                fraud_users.add(target)
 
         labels = []
         for user_id in self.users_df["user_id"].values:
