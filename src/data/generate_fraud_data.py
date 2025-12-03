@@ -69,7 +69,7 @@ class FraudDataGenerator:
         self.users_df = pd.DataFrame(users)
         return self.users_df
 
-    def generate_fraud_rings(self, n_rings: int = 75) -> list:
+    def generate_fraud_rings(self, n_rings: int = 8) -> list:
         """
         Generate fraud ring patterns (circular money flows).
 
@@ -115,7 +115,7 @@ class FraudDataGenerator:
 
         return list(set(fraudulent_users))
 
-    def generate_velocity_anomalies(self, n_compromised: int = 250) -> list:
+    def generate_velocity_anomalies(self, n_compromised: int = 50) -> list:
         """
         Generate velocity anomaly patterns (unusual transaction bursts).
 
@@ -155,7 +155,7 @@ class FraudDataGenerator:
 
         return list(compromised_users)
 
-    def generate_fraud_communities(self, n_communities: int = 8) -> list:
+    def generate_fraud_communities(self, n_communities: int = 2) -> list:
         """
         Generate isolated fraudster communities.
 
