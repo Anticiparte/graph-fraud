@@ -45,6 +45,7 @@ htmlcov/
 # Jupyter/Marimo
 .ipynb_checkpoints
 *.ipynb
+__marimo__/
 
 # Data
 data/raw/*
