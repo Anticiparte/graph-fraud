@@ -135,30 +135,41 @@ class GraphFeatureExtractor:
         print(f"  Extracted transaction features for {len(df)} users")
         return df
 
-    def extract_fraud_transaction_features(self) -> pd.DataFrame:
+    # REMOVED: extract_fraud_transaction_features() - causes data leakage
+    # These features use t.is_fraud which is derived from ground truth labels
+
+    def extract_temporal_features(self) -> pd.DataFrame:
         """
-        Extract fraud-specific transaction features.
+        Extract temporal behavioral features (no ground truth labels).
 
         Returns:
-            DataFrame with fraud transaction features
+            DataFrame with temporal features
         """
-        print("Extracting fraud transaction features...")
+        print("Extracting temporal behavioral features...")
 
         query = """
         MATCH (u:User)
         OPTIONAL MATCH (u)-[t:TRANSACTS_WITH]->()
-        WHERE t.is_fraud
-        WITH u, count(t) AS fraud_txn_count_out, sum(t.amount) AS fraud_amount_out
-        OPTIONAL MATCH (u)<-[t2:TRANSACTS_WITH]-()
-        WHERE t2.is_fraud
-        WITH u, fraud_txn_count_out, fraud_amount_out,
-             count(t2) AS fraud_txn_count_in, sum(t2.amount) AS fraud_amount_in
+        WITH u, collect(t) AS transactions
+        WITH u,
+             size(transactions) AS txn_count,
+             CASE WHEN size(transactions) > 0
+                 THEN reduce(s = 0.0, t IN transactions | s + t.amount) / size(transactions)
+                 ELSE 0.0
+             END AS avg_amount,
+             CASE WHEN size(transactions) > 0
+                 THEN reduce(maxVal = 0.0, t IN transactions | 
+                     CASE WHEN t.amount > maxVal THEN t.amount ELSE maxVal END)
+                 ELSE 0.0
+             END AS max_amount
+        WITH u,
+             CASE WHEN avg_amount > 0.0
+                 THEN max_amount / avg_amount
+                 ELSE 0.0
+             END AS max_to_avg_amount_ratio
         RETURN
             u.user_id AS user_id,
-            coalesce(fraud_txn_count_out, 0) AS fraud_txn_count_out,
-            coalesce(fraud_txn_count_in, 0) AS fraud_txn_count_in,
-            coalesce(fraud_amount_out, 0.0) AS fraud_amount_out,
-            coalesce(fraud_amount_in, 0.0) AS fraud_amount_in
+            max_to_avg_amount_ratio
         """
 
         with self.driver.session() as session:
@@ -166,12 +177,41 @@ class GraphFeatureExtractor:
             records = [dict(record) for record in result]
 
         df = pd.DataFrame(records)
-        print(f"  Extracted fraud transaction features for {len(df)} users")
+        print(f"  Extracted temporal features for {len(df)} users")
+        return df
+
+    def extract_network_pattern_features(self) -> pd.DataFrame:
+        """
+        Extract network pattern features (circular patterns, bidirectional flows).
+
+        Returns:
+            DataFrame with network pattern features
+        """
+        print("Extracting network pattern features...")
+
+        query = """
+        MATCH (u:User)
+        OPTIONAL MATCH (u)-[t1:TRANSACTS_WITH]->(other:User)-[t2:TRANSACTS_WITH]->(u)
+        WITH u, count(DISTINCT other) AS bidirectional_partners
+        OPTIONAL MATCH path = (u)-[:TRANSACTS_WITH*2..3]->(u)
+        WITH u, bidirectional_partners, count(DISTINCT path) AS circular_paths
+        RETURN
+            u.user_id AS user_id,
+            bidirectional_partners,
+            circular_paths
+        """
+
+        with self.driver.session() as session:
+            result = session.run(query)
+            records = [dict(record) for record in result]
+
+        df = pd.DataFrame(records)
+        print(f"  Extracted network pattern features for {len(df)} users")
         return df
 
     def extract_neighbor_features(self) -> pd.DataFrame:
         """
-        Extract neighbor-based features (fraud connections).
+        Extract neighbor-based features (network connectivity).
 
         Returns:
             DataFrame with neighbor features
@@ -182,16 +222,9 @@ class GraphFeatureExtractor:
         MATCH (u:User)
         OPTIONAL MATCH (u)-[:TRANSACTS_WITH]-(neighbor:User)
         WITH u, collect(DISTINCT neighbor) AS neighbors
-        WITH u,
-             size(neighbors) AS neighbor_count,
-             CASE WHEN size(neighbors) > 0
-                 THEN toFloat(size([n IN neighbors WHERE n.is_fraudster])) / size(neighbors)
-                 ELSE 0.0
-             END AS fraud_neighbor_ratio
         RETURN
             u.user_id AS user_id,
-            neighbor_count,
-            fraud_neighbor_ratio
+            size(neighbors) AS neighbor_count
         """
 
         with self.driver.session() as session:
@@ -291,11 +324,12 @@ class GraphFeatureExtractor:
         print("=" * 70)
         print()
 
-        # Extract all feature sets
+        # Extract all feature sets (NO FRAUD-SPECIFIC FEATURES to avoid leakage)
         user_df = self.extract_user_features()
         degree_df = self.extract_degree_features()
         txn_df = self.extract_transaction_features()
-        fraud_txn_df = self.extract_fraud_transaction_features()
+        temporal_df = self.extract_temporal_features()
+        pattern_df = self.extract_network_pattern_features()
         neighbor_df = self.extract_neighbor_features()
         device_df = self.extract_device_features()
         ip_df = self.extract_ip_features()
@@ -303,7 +337,7 @@ class GraphFeatureExtractor:
         # Merge all features
         print("\nMerging feature sets...")
         features = user_df
-        for df in [degree_df, txn_df, fraud_txn_df, neighbor_df, device_df, ip_df]:
+        for df in [degree_df, txn_df, temporal_df, pattern_df, neighbor_df, device_df, ip_df]:
             features = features.merge(df, on="user_id", how="left")
 
         # Fill missing values
