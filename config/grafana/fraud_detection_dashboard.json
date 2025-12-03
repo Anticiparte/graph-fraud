@@ -1,0 +1,163 @@
+{
+  "dashboard": {
+    "title": "Fraud Detection Monitoring",
+    "tags": ["fraud", "ml", "monitoring"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 0,
+    "refresh": "30s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Total Predictions",
+        "type": "stat",
+        "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "sum(fraud_predictions_total)",
+            "legendFormat": "Total"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Fraud vs Legitimate Predictions",
+        "type": "piechart",
+        "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0},
+        "targets": [
+          {
+            "expr": "fraud_predictions_total",
+            "legendFormat": "{{prediction}}"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Prediction Rate (per minute)",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "targets": [
+          {
+            "expr": "rate(fraud_predictions_total[1m])",
+            "legendFormat": "{{prediction}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Predictions/min"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Fraud Score Distribution",
+        "type": "heatmap",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "targets": [
+          {
+            "expr": "rate(fraud_prediction_score_bucket[5m])",
+            "legendFormat": "{{le}}"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Inference Duration (p50, p95, p99)",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(fraud_inference_duration_seconds_bucket[5m]))",
+            "legendFormat": "p50"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(fraud_inference_duration_seconds_bucket[5m]))",
+            "legendFormat": "p95"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(fraud_inference_duration_seconds_bucket[5m]))",
+            "legendFormat": "p99"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "Duration"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Fraud Detection Rate (%)",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+        "targets": [
+          {
+            "expr": "sum(rate(fraud_predictions_total{prediction=\"fraud\"}[5m])) / sum(rate(fraud_predictions_total[5m])) * 100",
+            "legendFormat": "Fraud Rate"
+          }
+        ],
+        "yaxes": [
+          {"format": "percent", "label": "Fraud %", "min": 0, "max": 100},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Average Fraud Score",
+        "type": "stat",
+        "gridPos": {"h": 8, "w": 6, "x": 12, "y": 16},
+        "targets": [
+          {
+            "expr": "rate(fraud_prediction_score_sum[5m]) / rate(fraud_prediction_score_count[5m])",
+            "legendFormat": "Avg Score"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "min": 0,
+            "max": 1,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 0.5, "color": "yellow"},
+                {"value": 0.8, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "High-Risk Predictions (score > 0.9)",
+        "type": "stat",
+        "gridPos": {"h": 8, "w": 6, "x": 18, "y": 16},
+        "targets": [
+          {
+            "expr": "sum(rate(fraud_prediction_score_bucket{le=\"1.0\"}[5m])) - sum(rate(fraud_prediction_score_bucket{le=\"0.9\"}[5m]))",
+            "legendFormat": "High Risk"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 10, "color": "yellow"},
+                {"value": 50, "color": "red"}
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "timepicker": {
+      "refresh_intervals": ["5s", "10s", "30s", "1m", "5m"]
+    }
+  }
+}

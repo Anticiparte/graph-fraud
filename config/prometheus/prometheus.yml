@@ -1,0 +1,25 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'fraud-detection'
+    environment: 'local'
+
+scrape_configs:
+  - job_name: 'fraud-inference'
+    static_configs:
+      - targets: ['host.docker.internal:8000']
+        labels:
+          service: 'fraud-inference'
+
+  - job_name: 'neo4j'
+    static_configs:
+      - targets: ['neo4j:2004']
+        labels:
+          service: 'neo4j'
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
